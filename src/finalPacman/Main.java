@@ -1,5 +1,6 @@
 /**
- * @author Jessie Baskauf and Ellie Mamantov
+ * @author Alex Wilson, Danny Dang and Robert Briggs
+
  * Sets up the controller, loads the fxml file, and runs the application.
  */
 
@@ -16,10 +17,10 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("pacman.fxml"));
-        Parent root = loader.load();
+        FXMLLoader load = new FXMLLoader(getClass().getResource("pacman.fxml"));
+        Parent root = load.load();
         primaryStage.setTitle("PacMan");
-        Controller controller = loader.getController();
+        Controller controller = load.getController();
         root.setOnKeyPressed(controller);
         double sceneWidth = controller.getBoardWidth() + 20.0;
         double sceneHeight = controller.getBoardHeight() + 100.0;

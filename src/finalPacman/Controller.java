@@ -1,5 +1,5 @@
 /**
- * @author Jessie Baskauf and Ellie Mamantov
+ * @author Alex Wilson, Danny Dang and Robert Briggs
  * The Controller handles user input and coordinates the updating of the model and the view with the help of a timer.
  */
 
@@ -25,7 +25,7 @@ public class Controller implements EventHandler<KeyEvent> {
     private static final String[] levelFiles = {"src/levels/level1.txt", "src/levels/level2.txt", "src/levels/level3.txt"};
 
     private Timer timer;
-    private static int ghostEatingModeCounter;
+    private static int powerPelletModeCounter;
     private boolean paused;
 
     public Controller() {
@@ -38,8 +38,8 @@ public class Controller implements EventHandler<KeyEvent> {
     public void initialize() {
         String file = this.getLevelFile(0);
         this.pacManModel = new PacManModel();
-        this.update(PacManModel.Direction.NONE);
-        ghostEatingModeCounter = 25;
+        this.update(PacManModel.Movement.STOP);
+        powerPelletModeCounter = 25;
         this.startTimer();
     }
 
@@ -52,7 +52,7 @@ public class Controller implements EventHandler<KeyEvent> {
             public void run() {
                 Platform.runLater(new Runnable() {
                     public void run() {
-                        update(pacManModel.getCurrentDirection());
+                        update(pacManModel.getCurrentMovement());
                     }
                 });
             }
@@ -66,8 +66,8 @@ public class Controller implements EventHandler<KeyEvent> {
      * Steps the PacManModel, updates the view, updates score and level, displays Game Over/You Won, and instructions of how to play
      * @param direction the most recently inputted direction for PacMan to move in
      */
-    private void update(PacManModel.Direction direction) {
-        this.pacManModel.step(direction);
+    private void update(PacManModel.Movement movement) {
+        this.pacManModel.move(movement);
         this.pacManView.update(pacManModel);
         this.scoreLabel.setText(String.format("Score: %d", this.pacManModel.getScore()));
         this.levelLabel.setText(String.format("Level: %d", this.pacManModel.getLevel()));
@@ -79,11 +79,11 @@ public class Controller implements EventHandler<KeyEvent> {
             this.gameOverLabel.setText(String.format("YOU WON!"));
         }
         //when PacMan is in ghostEatingMode, count down the ghostEatingModeCounter to reset ghostEatingMode to false when the counter is 0
-        if (pacManModel.isGhostEatingMode()) {
-            ghostEatingModeCounter--;
+        if (pacManModel.isPowerPelletMode()) {
+            powerPelletModeCounter--;
         }
-        if (ghostEatingModeCounter == 0 && pacManModel.isGhostEatingMode()) {
-            pacManModel.setGhostEatingMode(false);
+        if (powerPelletModeCounter == 0 && pacManModel.isPowerPelletMode()) {
+            pacManModel.setPowerPelletMode(false);
         }
     }
 
@@ -92,19 +92,19 @@ public class Controller implements EventHandler<KeyEvent> {
      * @param keyEvent user's key click
      */
     @Override
-    public void handle(KeyEvent keyEvent) {
+    public void handle(KeyEvent ke) {
         boolean keyRecognized = true;
-        KeyCode code = keyEvent.getCode();
-        PacManModel.Direction direction = PacManModel.Direction.NONE;
-        if (code == KeyCode.LEFT) {
-            direction = PacManModel.Direction.LEFT;
-        } else if (code == KeyCode.RIGHT) {
-            direction = PacManModel.Direction.RIGHT;
-        } else if (code == KeyCode.UP) {
-            direction = PacManModel.Direction.UP;
-        } else if (code == KeyCode.DOWN) {
-            direction = PacManModel.Direction.DOWN;
-        } else if (code == KeyCode.G) {
+        KeyCode keyCode = ke.getCode();
+        PacManModel.Movement movement = PacManModel.Movement.STOP;
+        if (keyCode == KeyCode.A) {
+            movement = PacManModel.Movement.LEFT;
+        } else if (keyCode == KeyCode.D) {
+            movement = PacManModel.Movement.RIGHT;
+        } else if (keyCode == KeyCode.W) {
+            movement = PacManModel.Movement.UP;
+        } else if (keyCode == KeyCode.S) {
+            movement = PacManModel.Movement.DOWN;
+        } else if (keyCode == KeyCode.P) {
             pause();
             this.pacManModel.startNewGame();
             this.gameOverLabel.setText(String.format(""));
@@ -114,8 +114,8 @@ public class Controller implements EventHandler<KeyEvent> {
             keyRecognized = false;
         }
         if (keyRecognized) {
-            keyEvent.consume();
-            pacManModel.setCurrentDirection(direction);
+            ke.consume();
+            pacManModel.setCurrentMovement(movement);
         }
     }
 
@@ -135,12 +135,12 @@ public class Controller implements EventHandler<KeyEvent> {
         return PacManView.CELL_WIDTH * this.pacManView.getRowCount();
     }
 
-    public static void setGhostEatingModeCounter() {
-        ghostEatingModeCounter = 25;
+    public static void setPowerPelletModeCounter() {
+        powerPelletModeCounter = 25;
     }
 
-    public static int getGhostEatingModeCounter() {
-        return ghostEatingModeCounter;
+    public static int getPowerPelletModeCounter() {
+        return powerPelletModeCounter;
     }
 
     public static String getLevelFile(int x)

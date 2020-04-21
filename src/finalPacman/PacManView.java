@@ -1,5 +1,5 @@
 /**
- * @author Jessie Baskauf and Ellie Mamantov
+ * @author Alex Wilson, Danny Dang and Robert Briggs
  * Encorporates the various Views of the application that reference different parts of the Model, including the main
  * game board, the score label, the level label, and the Game Over label.
  */
@@ -7,6 +7,7 @@
 package finalPacman;
 
 import javafx.fxml.FXML;
+
 import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -18,31 +19,31 @@ public class PacManView extends Group {
     @FXML private int rowCount;
     @FXML private int columnCount;
     private ImageView[][] cellViews;
-    private Image pacmanRightImage;
-    private Image pacmanUpImage;
-    private Image pacmanDownImage;
-    private Image pacmanLeftImage;
-    private Image ghost1Image;
-    private Image ghost2Image;
-    private Image blueGhostImage;
-    private Image wallImage;
-    private Image bigDotImage;
-    private Image smallDotImage;
+    private Image pacmanRight;
+    private Image pacmanUp;
+    private Image pacmanDown;
+    private Image pacmanLeft;
+    private Image ghost1;
+    private Image ghost2;
+    private Image blueGhost;
+    private Image wall;
+    private Image powerPellet;
+    private Image pacDot;
 
     /**
      * Initializes the values of the image instance variables from files
      */
     public PacManView() {
-        this.pacmanRightImage = new Image(getClass().getResourceAsStream("/res/pacmanRight.gif"));
-        this.pacmanUpImage = new Image(getClass().getResourceAsStream("/res/pacmanUp.gif"));
-        this.pacmanDownImage = new Image(getClass().getResourceAsStream("/res/pacmanDown.gif"));
-        this.pacmanLeftImage = new Image(getClass().getResourceAsStream("/res/pacmanLeft.gif"));
-        this.ghost1Image = new Image(getClass().getResourceAsStream("/res/redghost.gif"));
-        this.ghost2Image = new Image(getClass().getResourceAsStream("/res/ghost2.gif"));
-        this.blueGhostImage = new Image(getClass().getResourceAsStream("/res/blueghost.gif"));
-        this.wallImage = new Image(getClass().getResourceAsStream("/res/wall.png"));
-        this.bigDotImage = new Image(getClass().getResourceAsStream("/res/whitedot.png"));
-        this.smallDotImage = new Image(getClass().getResourceAsStream("/res/smalldot.png"));
+        this.pacmanRight = new Image(getClass().getResourceAsStream("/res/pacmanRight.gif"));
+        this.pacmanUp = new Image(getClass().getResourceAsStream("/res/pacmanUp.gif"));
+        this.pacmanDown = new Image(getClass().getResourceAsStream("/res/pacmanDown.gif"));
+        this.pacmanLeft = new Image(getClass().getResourceAsStream("/res/pacmanLeft.gif"));
+        this.ghost1 = new Image(getClass().getResourceAsStream("/res/redghost.gif"));
+        this.ghost2 = new Image(getClass().getResourceAsStream("/res/ghost2.gif"));
+        this.blueGhost = new Image(getClass().getResourceAsStream("/res/blueghost.gif"));
+        this.wall = new Image(getClass().getResourceAsStream("/res/wall.png"));
+        this.powerPellet = new Image(getClass().getResourceAsStream("/res/whitedot.png"));
+        this.pacDot = new Image(getClass().getResourceAsStream("/res/smalldot.png"));
     }
 
     /**
@@ -76,55 +77,55 @@ public class PacManView extends Group {
             for (int column = 0; column < this.columnCount; column++){
                 CellValue value = model.getCellValue(row, column);
                 if (value == CellValue.WALL) {
-                    this.cellViews[row][column].setImage(this.wallImage);
+                    this.cellViews[row][column].setImage(this.wall);
                 }
-                else if (value == CellValue.BIGDOT) {
-                    this.cellViews[row][column].setImage(this.bigDotImage);
+                else if (value == CellValue.POWERPELLET) {
+                    this.cellViews[row][column].setImage(this.powerPellet);
                 }
-                else if (value == CellValue.SMALLDOT) {
-                    this.cellViews[row][column].setImage(this.smallDotImage);
+                else if (value == CellValue.PACDOT) {
+                    this.cellViews[row][column].setImage(this.pacDot);
                 }
                 else {
                     this.cellViews[row][column].setImage(null);
                 }
                 //check which direction PacMan is going in and display the corresponding image
-                if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && (PacManModel.getLastDirection() == PacManModel.Direction.RIGHT || PacManModel.getLastDirection() == PacManModel.Direction.NONE)) {
-                    this.cellViews[row][column].setImage(this.pacmanRightImage);
+                if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && (PacManModel.getLastMovement() == PacManModel.Movement.RIGHT || PacManModel.getLastMovement() == PacManModel.Movement.STOP)) {
+                    this.cellViews[row][column].setImage(this.pacmanRight);
                 }
-                else if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && PacManModel.getLastDirection() == PacManModel.Direction.LEFT) {
-                    this.cellViews[row][column].setImage(this.pacmanLeftImage);
+                else if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && PacManModel.getLastMovement() == PacManModel.Movement.LEFT) {
+                    this.cellViews[row][column].setImage(this.pacmanLeft);
                 }
-                else if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && PacManModel.getLastDirection() == PacManModel.Direction.UP) {
-                    this.cellViews[row][column].setImage(this.pacmanUpImage);
+                else if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && PacManModel.getLastMovement() == PacManModel.Movement.UP) {
+                    this.cellViews[row][column].setImage(this.pacmanUp);
                 }
-                else if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && PacManModel.getLastDirection() == PacManModel.Direction.DOWN) {
-                    this.cellViews[row][column].setImage(this.pacmanDownImage);
+                else if (row == model.getPacmanLocation().getX() && column == model.getPacmanLocation().getY() && PacManModel.getLastMovement() == PacManModel.Movement.DOWN) {
+                    this.cellViews[row][column].setImage(this.pacmanDown);
                 }
                 //make ghosts "blink" towards the end of ghostEatingMode (display regular ghost images on alternating updates of the counter)
-                if (PacManModel.isGhostEatingMode() && (Controller.getGhostEatingModeCounter() == 6 ||Controller.getGhostEatingModeCounter() == 4 || Controller.getGhostEatingModeCounter() == 2)) {
+                if (PacManModel.isPowerPelletMode() && (Controller.getPowerPelletModeCounter() == 6 ||Controller.getPowerPelletModeCounter() == 4 || Controller.getPowerPelletModeCounter() == 2)) {
                     if (row == model.getGhost1Location().getX() && column == model.getGhost1Location().getY()) {
-                        this.cellViews[row][column].setImage(this.ghost1Image);
+                        this.cellViews[row][column].setImage(this.ghost1);
                     }
                     if (row == model.getGhost2Location().getX() && column == model.getGhost2Location().getY()) {
-                        this.cellViews[row][column].setImage(this.ghost2Image);
+                        this.cellViews[row][column].setImage(this.ghost2);
                     }
                 }
                 //display blue ghosts in ghostEatingMode
-                else if (PacManModel.isGhostEatingMode()) {
+                else if (PacManModel.isPowerPelletMode()) {
                     if (row == model.getGhost1Location().getX() && column == model.getGhost1Location().getY()) {
-                        this.cellViews[row][column].setImage(this.blueGhostImage);
+                        this.cellViews[row][column].setImage(this.blueGhost);
                     }
                     if (row == model.getGhost2Location().getX() && column == model.getGhost2Location().getY()) {
-                        this.cellViews[row][column].setImage(this.blueGhostImage);
+                        this.cellViews[row][column].setImage(this.blueGhost);
                     }
                 }
                 //dispaly regular ghost images otherwise
                 else {
                     if (row == model.getGhost1Location().getX() && column == model.getGhost1Location().getY()) {
-                        this.cellViews[row][column].setImage(this.ghost1Image);
+                        this.cellViews[row][column].setImage(this.ghost1);
                     }
                     if (row == model.getGhost2Location().getX() && column == model.getGhost2Location().getY()) {
-                        this.cellViews[row][column].setImage(this.ghost2Image);
+                        this.cellViews[row][column].setImage(this.ghost2);
                     }
                 }
             }

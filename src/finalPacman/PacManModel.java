@@ -1,5 +1,5 @@
 /**
- * @author Jessie Baskauf and Ellie Mamantov
+ * @author Alex Wilson, Danny Dang and Robert Briggs
  * The Model stores information about the game state, including the underlying grid of CellValues (as loaded from the
  * text file), various boolean indicators about game state, level, score, and the movement of PacMan and ghosts.
  */
@@ -15,10 +15,10 @@ import java.util.*;
 
 public class PacManModel {
     public enum CellValue {
-        EMPTY, SMALLDOT, BIGDOT, WALL, GHOST1HOME, GHOST2HOME, PACMANHOME
+        EMPTY, PACDOT, POWERPELLET, WALL, GHOST1HOME, GHOST2HOME, PACMANHOME
     };
-    public enum Direction {
-        UP, DOWN, LEFT, RIGHT, NONE
+    public enum Movement {
+        UP, DOWN, LEFT, RIGHT, STOP
     };
     @FXML private int rowCount;
     @FXML private int columnCount;
@@ -28,15 +28,15 @@ public class PacManModel {
     private int dotCount;
     private static boolean gameOver;
     private static boolean youWon;
-    private static boolean ghostEatingMode;
+    private static boolean powerPelletMode;
     private Point2D pacmanLocation;
     private Point2D pacmanVelocity;
     private Point2D ghost1Location;
     private Point2D ghost1Velocity;
     private Point2D ghost2Location;
     private Point2D ghost2Velocity;
-    private static Direction lastDirection;
-    private static Direction currentDirection;
+    private static Movement lastMovement;
+    private static Movement currentMovement;
 
     /**
      * Start a new game upon initializion
@@ -95,11 +95,11 @@ public class PacManModel {
                     thisValue = CellValue.WALL;
                 }
                 else if (value.equals("S")){
-                    thisValue = CellValue.SMALLDOT;
+                    thisValue = CellValue.PACDOT;
                     dotCount++;
                 }
                 else if (value.equals("B")){
-                    thisValue = CellValue.BIGDOT;
+                    thisValue = CellValue.POWERPELLET;
                     dotCount++;
                 }
                 else if (value.equals("1")){
@@ -132,8 +132,8 @@ public class PacManModel {
         ghost1Velocity = new Point2D(-1, 0);
         ghost2Location = new Point2D(ghost2Row,ghost2Column);
         ghost2Velocity = new Point2D(-1, 0);
-        currentDirection = Direction.NONE;
-        lastDirection = Direction.NONE;
+        currentMovement = Movement.STOP;
+        lastMovement = Movement.STOP;
     }
 
     /** Initialize values of instance variables and initialize level map
@@ -141,7 +141,7 @@ public class PacManModel {
     public void startNewGame() {
         this.gameOver = false;
         this.youWon = false;
-        this.ghostEatingMode = false;
+        this.powerPelletMode = false;
         dotCount = 0;
         rowCount = 0;
         columnCount = 0;
@@ -159,7 +159,7 @@ public class PacManModel {
             rowCount = 0;
             columnCount = 0;
             youWon = false;
-            ghostEatingMode = false;
+            powerPelletMode = false;
             try {
                 this.initializeLevel(Controller.getLevelFile(level - 1));
             }
@@ -176,18 +176,18 @@ public class PacManModel {
      * Move PacMan based on the direction indicated by the user (based on keyboard input from the Controller)
      * @param direction the most recently inputted direction for PacMan to move in
      */
-    public void movePacman(Direction direction) {
-        Point2D potentialPacmanVelocity = changeVelocity(direction);
+    public void movePacman(Movement movement) {
+        Point2D potentialPacmanVelocity = changeVelocity(movement);
         Point2D potentialPacmanLocation = pacmanLocation.add(potentialPacmanVelocity);
         //if PacMan goes offscreen, wrap around
         potentialPacmanLocation = setGoingOffscreenNewLocation(potentialPacmanLocation);
         //determine whether PacMan should change direction or continue in its most recent direction
         //if most recent direction input is the same as previous direction input, check for walls
-        if (direction.equals(lastDirection)) {
+        if (movement.equals(lastMovement)) {
             //if moving in the same direction would result in hitting a wall, stop moving
             if (grid[(int) potentialPacmanLocation.getX()][(int) potentialPacmanLocation.getY()] == CellValue.WALL){
-                pacmanVelocity = changeVelocity(Direction.NONE);
-                setLastDirection(Direction.NONE);
+                pacmanVelocity = changeVelocity(Movement.STOP);
+                setLastMovement(Movement.STOP);
             }
             else {
                 pacmanVelocity = potentialPacmanVelocity;
@@ -198,15 +198,15 @@ public class PacManModel {
         else {
             //if PacMan would hit a wall with the new direction input, check to make sure he would not hit a different wall if continuing in his previous direction
             if (grid[(int) potentialPacmanLocation.getX()][(int) potentialPacmanLocation.getY()] == CellValue.WALL){
-                potentialPacmanVelocity = changeVelocity(lastDirection);
+                potentialPacmanVelocity = changeVelocity(lastMovement);
                 potentialPacmanLocation = pacmanLocation.add(potentialPacmanVelocity);
                 //if changing direction would hit another wall, stop moving
                 if (grid[(int) potentialPacmanLocation.getX()][(int) potentialPacmanLocation.getY()] == CellValue.WALL){
-                    pacmanVelocity = changeVelocity(Direction.NONE);
-                    setLastDirection(Direction.NONE);
+                    pacmanVelocity = changeVelocity(Movement.STOP);
+                    setLastMovement(Movement.STOP);
                 }
                 else {
-                    pacmanVelocity = changeVelocity(lastDirection);
+                    pacmanVelocity = changeVelocity(lastMovement);
                     pacmanLocation = pacmanLocation.add(pacmanVelocity);
                 }
             }
@@ -214,7 +214,7 @@ public class PacManModel {
             else {
                 pacmanVelocity = potentialPacmanVelocity;
                 pacmanLocation = potentialPacmanLocation;
-                setLastDirection(direction);
+                setLastMovement(movement);
             }
         }
     }
@@ -243,13 +243,13 @@ public class PacManModel {
         //if the ghost is in the same row or column as PacMan and not in ghostEatingMode,
         // go in his direction until you get to a wall, then go a different direction
         //otherwise, go in a random direction, and if you hit a wall go in a different random direction
-        if (!ghostEatingMode) {
+        if (!powerPelletMode) {
             //check if ghost is in PacMan's column and move towards him
             if (location.getY() == pacmanLocation.getY()) {
                 if (location.getX() > pacmanLocation.getX()) {
-                    velocity = changeVelocity(Direction.UP);
+                    velocity = changeVelocity(Movement.UP);
                 } else {
-                    velocity = changeVelocity(Direction.DOWN);
+                    velocity = changeVelocity(Movement.DOWN);
                 }
                 Point2D potentialLocation = location.add(velocity);
                 //if the ghost would go offscreen, wrap around
@@ -257,8 +257,8 @@ public class PacManModel {
                 //generate new random directions until ghost can move without hitting a wall
                 while (grid[(int) potentialLocation.getX()][(int) potentialLocation.getY()] == CellValue.WALL) {
                     int randomNum = generator.nextInt(4);
-                    Direction direction = intToDirection(randomNum);
-                    velocity = changeVelocity(direction);
+                    Movement movement = intToMovement(randomNum);
+                    velocity = changeVelocity(movement);
                     potentialLocation = location.add(velocity);
                 }
                 location = potentialLocation;
@@ -266,16 +266,16 @@ public class PacManModel {
             //check if ghost is in PacMan's row and move towards him
             else if (location.getX() == pacmanLocation.getX()) {
                 if (location.getY() > pacmanLocation.getY()) {
-                    velocity = changeVelocity(Direction.LEFT);
+                    velocity = changeVelocity(Movement.LEFT);
                 } else {
-                    velocity = changeVelocity(Direction.RIGHT);
+                    velocity = changeVelocity(Movement.RIGHT);
                 }
                 Point2D potentialLocation = location.add(velocity);
                 potentialLocation = setGoingOffscreenNewLocation(potentialLocation);
                 while (grid[(int) potentialLocation.getX()][(int) potentialLocation.getY()] == CellValue.WALL) {
                     int randomNum = generator.nextInt(4);
-                    Direction direction = intToDirection(randomNum);
-                    velocity = changeVelocity(direction);
+                    Movement movement = intToMovement(randomNum);
+                    velocity = changeVelocity(movement);
                     potentialLocation = location.add(velocity);
                 }
                 location = potentialLocation;
@@ -286,8 +286,8 @@ public class PacManModel {
                 potentialLocation = setGoingOffscreenNewLocation(potentialLocation);
                 while(grid[(int) potentialLocation.getX()][(int) potentialLocation.getY()] == CellValue.WALL){
                     int randomNum = generator.nextInt( 4);
-                    Direction direction = intToDirection(randomNum);
-                    velocity = changeVelocity(direction);
+                    Movement movement = intToMovement(randomNum);
+                    velocity = changeVelocity(movement);
                     potentialLocation = location.add(velocity);
                 }
                 location = potentialLocation;
@@ -296,34 +296,34 @@ public class PacManModel {
         //if the ghost is in the same row or column as Pacman and in ghostEatingMode, go in the opposite direction
         // until it hits a wall, then go a different direction
         //otherwise, go in a random direction, and if it hits a wall go in a different random direction
-        if (ghostEatingMode) {
+        if (powerPelletMode) {
             if (location.getY() == pacmanLocation.getY()) {
                 if (location.getX() > pacmanLocation.getX()) {
-                    velocity = changeVelocity(Direction.DOWN);
+                    velocity = changeVelocity(Movement.DOWN);
                 } else {
-                    velocity = changeVelocity(Direction.UP);
+                    velocity = changeVelocity(Movement.UP);
                 }
                 Point2D potentialLocation = location.add(velocity);
                 potentialLocation = setGoingOffscreenNewLocation(potentialLocation);
                 while (grid[(int) potentialLocation.getX()][(int) potentialLocation.getY()] == CellValue.WALL) {
                     int randomNum = generator.nextInt(4);
-                    Direction direction = intToDirection(randomNum);
-                    velocity = changeVelocity(direction);
+                    Movement movement = intToMovement(randomNum);
+                    velocity = changeVelocity(movement);
                     potentialLocation = location.add(velocity);
                 }
                 location = potentialLocation;
             } else if (location.getX() == pacmanLocation.getX()) {
                 if (location.getY() > pacmanLocation.getY()) {
-                    velocity = changeVelocity(Direction.RIGHT);
+                    velocity = changeVelocity(Movement.RIGHT);
                 } else {
-                    velocity = changeVelocity(Direction.LEFT);
+                    velocity = changeVelocity(Movement.LEFT);
                 }
                 Point2D potentialLocation = location.add(velocity);
                 potentialLocation = setGoingOffscreenNewLocation(potentialLocation);
                 while (grid[(int) potentialLocation.getX()][(int) potentialLocation.getY()] == CellValue.WALL) {
                     int randomNum = generator.nextInt(4);
-                    Direction direction = intToDirection(randomNum);
-                    velocity = changeVelocity(direction);
+                    Movement movement = intToMovement(randomNum);
+                    velocity = changeVelocity(movement);
                     potentialLocation = location.add(velocity);
                 }
                 location = potentialLocation;
@@ -333,8 +333,8 @@ public class PacManModel {
                 potentialLocation = setGoingOffscreenNewLocation(potentialLocation);
                 while(grid[(int) potentialLocation.getX()][(int) potentialLocation.getY()] == CellValue.WALL){
                     int randomNum = generator.nextInt( 4);
-                    Direction direction = intToDirection(randomNum);
-                    velocity = changeVelocity(direction);
+                    Movement movement = intToMovement(randomNum);
+                    velocity = changeVelocity(movement);
                     potentialLocation = location.add(velocity);
                 }
                 location = potentialLocation;
@@ -368,18 +368,18 @@ public class PacManModel {
      * @param x an integer
      * @return the corresponding Direction
      */
-    public Direction intToDirection(int x){
+    public Movement intToMovement(int x){
         if (x == 0){
-            return Direction.LEFT;
+            return Movement.LEFT;
         }
         else if (x == 1){
-            return Direction.RIGHT;
+            return Movement.RIGHT;
         }
         else if(x == 2){
-            return Direction.UP;
+            return Movement.UP;
         }
         else{
-            return Direction.DOWN;
+            return Movement.DOWN;
         }
     }
 
@@ -416,25 +416,25 @@ public class PacManModel {
      * during the course of these movements. Switches game state to or from ghost-eating mode.
      * @param direction the most recently inputted direction for PacMan to move in
      */
-    public void step(Direction direction) {
-        this.movePacman(direction);
+    public void move(Movement movement) {
+        this.movePacman(movement);
         //if PacMan is on a small dot, delete small dot
         CellValue pacmanLocationCellValue = grid[(int) pacmanLocation.getX()][(int) pacmanLocation.getY()];
-        if (pacmanLocationCellValue == CellValue.SMALLDOT) {
+        if (pacmanLocationCellValue == CellValue.PACDOT) {
             grid[(int) pacmanLocation.getX()][(int) pacmanLocation.getY()] = CellValue.EMPTY;
             dotCount--;
             score += 10;
         }
         //if PacMan is on a big dot, delete big dot and change game state to ghost-eating mode and initialize the counter
-        if (pacmanLocationCellValue == CellValue.BIGDOT) {
+        if (pacmanLocationCellValue == CellValue.POWERPELLET) {
             grid[(int) pacmanLocation.getX()][(int) pacmanLocation.getY()] = CellValue.EMPTY;
             dotCount--;
             score += 50;
-            ghostEatingMode = true;
-            Controller.setGhostEatingModeCounter();
+            powerPelletMode = true;
+            Controller.setPowerPelletModeCounter();
         }
         //send ghost back to ghosthome if PacMan is on a ghost in ghost-eating mode
-        if (ghostEatingMode) {
+        if (powerPelletMode) {
             if (pacmanLocation.equals(ghost1Location)) {
                 sendGhost1Home();
                 score += 100;
@@ -457,7 +457,7 @@ public class PacManModel {
         }
         //move ghosts and checks again if ghosts or PacMan are eaten (repeating these checks helps account for even/odd numbers of squares between ghosts and PacMan)
         this.moveGhosts();
-        if (ghostEatingMode) {
+        if (powerPelletMode) {
             if (pacmanLocation.equals(ghost1Location)) {
                 sendGhost1Home();
                 score += 100;
@@ -489,17 +489,17 @@ public class PacManModel {
      * @param direction
      * @return Point2D velocity vector
      */
-    public Point2D changeVelocity(Direction direction){
-        if(direction == Direction.LEFT){
+    public Point2D changeVelocity(Movement movement){
+        if(movement == Movement.LEFT){
             return new Point2D(0,-1);
         }
-        else if(direction == Direction.RIGHT){
+        else if(movement == Movement.RIGHT){
             return new Point2D(0,1);
         }
-        else if(direction == Direction.UP){
+        else if(movement == Movement.UP){
             return new Point2D(-1,0);
         }
-        else if(direction == Direction.DOWN){
+        else if(movement == Movement.DOWN){
             return new Point2D(1,0);
         }
         else{
@@ -507,12 +507,12 @@ public class PacManModel {
         }
     }
 
-    public static boolean isGhostEatingMode() {
-        return ghostEatingMode;
+    public static boolean isPowerPelletMode() {
+        return powerPelletMode;
     }
 
-    public static void setGhostEatingMode(boolean ghostEatingModeBool) {
-        ghostEatingMode = ghostEatingModeBool;
+    public static void setPowerPelletMode(boolean powerPelletModeBoolean) {
+        powerPelletMode = powerPelletModeBoolean;
     }
 
     public static boolean isYouWon() {
@@ -545,20 +545,20 @@ public class PacManModel {
         return this.grid[row][column];
     }
 
-    public static Direction getCurrentDirection() {
-        return currentDirection;
+    public static Movement getCurrentMovement() {
+        return currentMovement;
     }
 
-    public void setCurrentDirection(Direction direction) {
-        currentDirection = direction;
+    public void setCurrentMovement(Movement movement) {
+        currentMovement = movement;
     }
 
-    public static Direction getLastDirection() {
-        return lastDirection;
+    public static Movement getLastMovement() {
+        return lastMovement;
     }
 
-    public void setLastDirection(Direction direction) {
-        lastDirection = direction;
+    public void setLastMovement(Movement movement) {
+        lastMovement = movement;
     }
 
     public int getScore() {
