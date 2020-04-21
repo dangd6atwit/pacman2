@@ -1,5 +1,5 @@
 /**
- * @author Alex Wilson, Danny Dang and Robert Briggs
+ * @author Alex Wilson, Danny Dang and Robert Briggs.
  * Encorporates the various Views of the application that reference different parts of the Model, including the main
  * game board, the score label, the level label, and the Game Over label.
  */

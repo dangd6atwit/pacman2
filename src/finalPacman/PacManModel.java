@@ -1,5 +1,5 @@
 /**
- * @author Alex Wilson, Danny Dang and Robert Briggs
+ * @author Alex Wilson, Danny Dang and Robert Briggs.
  * The Model stores information about the game state, including the underlying grid of CellValues (as loaded from the
  * text file), various boolean indicators about game state, level, score, and the movement of PacMan and ghosts.
  */

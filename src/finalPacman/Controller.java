@@ -1,5 +1,5 @@
 /**
- * @author Alex Wilson, Danny Dang and Robert Briggs
+ * @author Alex Wilson, Danny Dang and Robert Briggs.
  * The Controller handles user input and coordinates the updating of the model and the view with the help of a timer.
  */
 
